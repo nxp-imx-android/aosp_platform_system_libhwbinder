@@ -19,6 +19,7 @@
 #include <hwbinder/ProcessState.h>
 
 #include <cutils/atomic.h>
+#include <cutils/properties.h>
 #include <hwbinder/BpHwBinder.h>
 #include <hwbinder/IPCThreadState.h>
 #include <hwbinder/binder_kernel.h>
@@ -39,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define LOWRAM_BINDER_VM_SIZE ((1 * 600 * 1024) - sysconf(_SC_PAGE_SIZE) * 2)
 #define DEFAULT_BINDER_VM_SIZE ((1 * 1024 * 1024) - sysconf(_SC_PAGE_SIZE) * 2)
 #define DEFAULT_MAX_BINDER_THREADS 0
 
@@ -71,7 +73,11 @@ sp<ProcessState> ProcessState::self()
     if (gProcess != NULL) {
         return gProcess;
     }
-    gProcess = new ProcessState(DEFAULT_BINDER_VM_SIZE);
+    if (property_get_bool("ro.config.low_ram", false)) {
+        gProcess = new ProcessState(LOWRAM_BINDER_VM_SIZE);
+    } else {
+        gProcess = new ProcessState(DEFAULT_BINDER_VM_SIZE);
+    }
     return gProcess;
 }
 
