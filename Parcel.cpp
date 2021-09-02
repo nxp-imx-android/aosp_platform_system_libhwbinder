@@ -87,7 +87,7 @@ void acquire_binder_object(const sp<ProcessState>& proc,
     switch (obj.hdr.type) {
         case BINDER_TYPE_BINDER:
             if (obj.binder) {
-                LOG_REFS("Parcel %p acquiring reference on local %p", who, obj.cookie);
+                LOG_REFS("Parcel %p acquiring reference on local %llu", who, obj.cookie);
                 reinterpret_cast<IBinder*>(obj.cookie)->incStrong(who);
             }
             return;
@@ -133,7 +133,7 @@ void release_object(const sp<ProcessState>& proc,
     switch (obj.hdr.type) {
         case BINDER_TYPE_BINDER:
             if (obj.binder) {
-                LOG_REFS("Parcel %p releasing reference on local %p", who, obj.cookie);
+                LOG_REFS("Parcel %p releasing reference on local %llu", who, obj.cookie);
                 reinterpret_cast<IBinder*>(obj.cookie)->decStrong(who);
             }
             return;
@@ -1464,8 +1464,8 @@ status_t Parcel::readNullableNativeHandleNoDup(const native_handle_t **handle,
         return status;
     }
 
-    if (nativeHandleSize < sizeof(native_handle_t)) {
-        ALOGE("Received a native_handle_t size that was too small.");
+    if (nativeHandleSize < sizeof(native_handle_t) || nativeHandleSize > std::numeric_limits<uint32_t>::max()) {
+        ALOGE("Invalid native_handle_t size: %" PRIu64, nativeHandleSize);
         return BAD_VALUE;
     }
 
